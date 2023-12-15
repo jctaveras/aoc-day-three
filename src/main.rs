@@ -10,20 +10,43 @@ struct Coordinate {
 
 fn main() {
     let content = fs::read_to_string("./input.txt").expect("Input file should exist.");
-    let part_number_sum: u32 = content
-        .lines()
-        .enumerate()
-        .map(|line_value| get_point(line_value))
-        .flatten()
-        .map(|reference_point| find_part_number(reference_point, content.lines().enumerate()))
-        .flatten()
-        .sum();
+    let symbol_regex = Regex::new(r"[^\.\d]").unwrap();
+    let gear_regex = Regex::new(r"\*").unwrap();
+    let results = vec![symbol_regex, gear_regex]
+        .iter()
+        .map(|r| {
+            content
+                .lines()
+                .enumerate()
+                .map(|line_value| get_point(line_value, r.clone()))
+                .flatten()
+                .map(|reference_point| {
+                    find_part_number(reference_point, content.lines().enumerate())
+                })
+                .collect()
+        })
+        .collect::<Vec<Vec<Vec<u32>>>>();
 
-    println!("The sum of all part numbers is: {part_number_sum}");
+    println!(
+        "The sum of all part numbers is: {}",
+        results[0].iter().flatten().sum::<u32>()
+    );
+    println!(
+        "The product of all of the gear ratios is: {}",
+        results[1]
+            .iter()
+            .map(|gear_ratios| {
+                if gear_ratios.len() > 1 {
+                    gear_ratios.iter().product::<u32>()
+                } else {
+                    0
+                }
+            })
+            .sum::<u32>()
+    );
 }
 
-fn get_point(value: (usize, &str)) -> Vec<Coordinate> {
-    let symbol_regex = Regex::new(r"[^.\d]").unwrap();
+fn get_point(value: (usize, &str), symbol_regex: Regex) -> Vec<Coordinate> {
     let line = value.1;
     let y_value = value.0;
 
